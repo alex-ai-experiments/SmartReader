@@ -15,6 +15,7 @@ public static class ConfigureServices
         builder.AddDatabase();
         builder.Services.AddOpenApi();
         builder.AddStorageContainer();
+        builder.Services.AddHttpClient<IGeminiService, GeminiService>();
     }
     
     private static void AddSerilog(this WebApplicationBuilder builder)
