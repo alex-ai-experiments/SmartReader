@@ -10,6 +10,152 @@ interface ArticleData {
   error?: string;
 }
 
+/**
+ * Converts HTML content to markdown format with text-only content
+ * @param htmlContent - The HTML content to convert
+ * @returns Markdown formatted string with only text content
+ */
+function htmlToMarkdown(htmlContent: string): string {
+  // Create a temporary DOM element to parse HTML
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = htmlContent;
+
+  // Remove script, style, and other non-content elements
+  const elementsToRemove = tempDiv.querySelectorAll('script, style, nav, footer, aside, .advertisement, .ads');
+  elementsToRemove.forEach(el => el.remove());
+
+  let markdown = '';
+
+  function processNode(node: Node): void {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.textContent?.trim();
+      if (text) {
+        markdown += text + ' ';
+      }
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as Element;
+      const tagName = element.tagName.toLowerCase();
+
+      switch (tagName) {
+        case 'h1':
+          markdown += '\n\n# ';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'h2':
+          markdown += '\n\n## ';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'h3':
+          markdown += '\n\n### ';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'h4':
+          markdown += '\n\n#### ';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'h5':
+          markdown += '\n\n##### ';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'h6':
+          markdown += '\n\n###### ';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'p':
+          markdown += '\n\n';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'br':
+          markdown += '\n';
+          break;
+        case 'strong':
+        case 'b':
+          markdown += '**';
+          processChildren(node);
+          markdown += '**';
+          break;
+        case 'em':
+        case 'i':
+          markdown += '*';
+          processChildren(node);
+          markdown += '*';
+          break;
+        case 'code':
+          markdown += '`';
+          processChildren(node);
+          markdown += '`';
+          break;
+        case 'pre':
+          markdown += '\n\n```\n';
+          processChildren(node);
+          markdown += '\n```\n\n';
+          break;
+        case 'blockquote':
+          markdown += '\n\n> ';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'ul':
+        case 'ol':
+          markdown += '\n\n';
+          processChildren(node);
+          markdown += '\n\n';
+          break;
+        case 'li':
+          markdown += '\n- ';
+          processChildren(node);
+          break;
+        case 'a':
+          const href = element.getAttribute('href');
+          if (href) {
+            markdown += '[';
+            processChildren(node);
+            markdown += `](${href})`;
+          } else {
+            processChildren(node);
+          }
+          break;
+        case 'img':
+          const src = element.getAttribute('src');
+          const alt = element.getAttribute('alt') || 'Image';
+          if (src) {
+            markdown += `\n\n![${alt}](${src})\n\n`;
+          }
+          break;
+        case 'hr':
+          markdown += '\n\n---\n\n';
+          break;
+        default:
+          // For other elements, just process their children
+          processChildren(node);
+          break;
+      }
+    }
+  }
+
+  function processChildren(node: Node): void {
+    for (const child of Array.from(node.childNodes)) {
+      processNode(child);
+    }
+  }
+
+  processChildren(tempDiv);
+
+  // Clean up the markdown - remove excessive whitespace and newlines
+  return markdown
+    .replace(/\n{3,}/g, '\n\n') // Replace 3+ newlines with 2
+    .replace(/[ \t]+/g, ' ')    // Replace multiple spaces/tabs with single space
+    .replace(/[ \t]*\n[ \t]*/g, '\n') // Remove spaces around newlines
+    .trim();
+}
+
 function extractArticle(): ArticleData {
   console.log("[CS] extractArticle function called.");
   
@@ -39,16 +185,25 @@ function extractArticle(): ArticleData {
 
     if (article && article.content) {
       console.log("[CS] Article content extracted successfully by Readability.");
+      
+      // Convert HTML content to Markdown
+      const markdownContent = htmlToMarkdown(article.content);
+      console.log("[CS] Content converted to Markdown format.");
+      
       return {
         title: article.title || document.title,
-        content: article.content,
+        content: markdownContent, // Now returns markdown instead of HTML
         url: document.location.href,
       };
     } else {
       console.warn("[CS] Readability did not return content. Falling back to document.body.innerHTML. Article object:", article);
+      
+      // Convert fallback HTML content to Markdown as well
+      const fallbackMarkdown = htmlToMarkdown(document.body.innerHTML);
+      
       return {
         title: document.title || "Fallback Title",
-        content: document.body.innerHTML, // Fallback
+        content: fallbackMarkdown, // Fallback also converted to markdown
         url: document.location.href,
         error: "Readability could not parse the article effectively. Full body used as fallback."
       };
