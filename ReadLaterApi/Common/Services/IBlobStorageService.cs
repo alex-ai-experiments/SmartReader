@@ -7,4 +7,5 @@ namespace ReadLaterApi.Common.Services;
 public interface IBlobStorageService
 {
     Task<Uri> UploadArticle(string content, string blobName);
+    Task<string> GetArticleContent(string blobName);
 }

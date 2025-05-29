@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadLater App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 50%;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .content-area {
+            width: 50%;
+            background: white;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c33;
+        }
+
+        .article-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .article-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #007bff;
+        }
+
+        .article-card.selected {
+            border-color: #007bff;
+            background: #f8f9ff;
+        }
+
+        .article-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .article-url {
+            color: #007bff;
+            font-size: 14px;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+
+        .article-date {
+            color: #666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .content-placeholder {
+            text-align: center;
+            color: #999;
+            font-size: 16px;
+            padding: 60px 20px;
+        }
+
+        .ai-summary {
+            background: #1a365d;
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .summary-section {
+            margin-bottom: 20px;
+        }
+
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #e2e8f0;
+        }
+
+        .summary-text {
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .keywords-section {
+            border-top: 1px solid #2d4b69;
+            padding-top: 20px;
+        }
+
+        .keywords-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #e2e8f0;
+        }
+
+        .keywords-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .keyword-tag {
+            background: #2d4b69;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .article-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid #e0e0e0;
+            line-height: 1.7;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .article-content h1, .article-content h2, .article-content h3 {
+            margin: 20px 0 15px 0;
+            color: #2c3e50;
+        }
+
+        .article-content h1 {
+            font-size: 24px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .article-content h2 {
+            font-size: 20px;
+        }
+
+        .article-content h3 {
+            font-size: 18px;
+        }
+
+        .article-content p {
+            margin-bottom: 15px;
+        }
+
+        .article-content ul, .article-content ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        .article-content li {
+            margin-bottom: 8px;
+        }
+
+        .article-content blockquote {
+            border-left: 4px solid #007bff;
+            padding-left: 20px;
+            margin: 20px 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        .article-content code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .article-content pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .content-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <read-later-app></read-later-app>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, computed } = Vue;
+
+        // API Service
+        const ApiService = {
+            baseURL: 'https://localhost:7198',
+            
+            async getArticles() {
+                const response = await axios.get(`${this.baseURL}/articles`);
+                return response.data;
+            },
+            
+            async getArticleContent(articleId) {
+                const response = await axios.get(`${this.baseURL}/article/${articleId}`);
+                return response.data;
+            }
+        };
+
+        const Utils = {
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            },
+
+            parseKeywords(keywordsJson) {
+                try {
+                    return JSON.parse(keywordsJson);
+                } catch {
+                    return [];
+                }
+            },
+
+            convertMarkdownToHtml(markdown) {
+                if (!markdown) return '';
+                
+                return markdown
+                    // Headers
+                    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                    // Bold
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    // Italic
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    // Links
+                    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+                    // Line breaks
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/^/, '<p>')
+                    .replace(/$/, '</p>')
+                    // Code blocks
+                    .replace(/```([^`]+)```/g, '<pre><code>$1</code></pre>')
+                    // Inline code
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    // Lists
+                    .replace(/^\* (.+$)/gm, '<li>$1</li>')
+                    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+            }
+        };
+
+        const ArticleCard = {
+            props: {
+                article: {
+                    type: Object,
+                    required: true
+                },
+                isSelected: {
+                    type: Boolean,
+                    default: false
+                }
+            },
+            emits: ['select'],
+            template: `
+                <div 
+                    :class="['article-card', { selected: isSelected }]"
+                    @click="$emit('select', article)"
+                >
+                    <div class="article-title">{{ article.title }}</div>
+                    <div class="article-url" v-if="article.url">{{ article.url }}</div>
+                    <div class="article-date">{{ Utils.formatDate(article.savedAtUtc) }}</div>
+                </div>
+            `,
+            setup() {
+                return { Utils };
+            }
+        };
+
+        const ArticlesList = {
+            props: {
+                articles: {
+                    type: Array,
+                    default: () => []
+                },
+                selectedArticle: {
+                    type: Object,
+                    default: null
+                },
+                loading: {
+                    type: Boolean,
+                    default: false
+                },
+                error: {
+                    type: String,
+                    default: ''
+                }
+            },
+            emits: ['article-selected'],
+            components: {
+                ArticleCard
+            },
+            template: `
+                <div class="sidebar">
+                    <div class="header">
+                        <h1>ReadLater Articles</h1>
+                    </div>
+
+                    <div v-if="loading" class="loading">
+                        Loading articles...
+                    </div>
+
+                    <div v-if="error" class="error">
+                        {{ error }}
+                    </div>
+
+                    <div v-if="!loading && articles.length === 0" class="loading">
+                        No articles found
+                    </div>
+
+                    <article-card
+                        v-for="article in articles"
+                        :key="article.id"
+                        :article="article"
+                        :is-selected="selectedArticle?.id === article.id"
+                        @select="$emit('article-selected', $event)"
+                    />
+                </div>
+            `
+        };
+
+        const AiSummary = {
+            props: {
+                article: {
+                    type: Object,
+                    required: true
+                }
+            },
+            computed: {
+                keywords() {
+                    return Utils.parseKeywords(this.article.keywords);
+                }
+            },
+            template: `
+                <div class="ai-summary">
+                    <div class="summary-section">
+                        <div class="summary-title">Summary</div>
+                        <div class="summary-text">{{ article.textSummary || 'No summary available' }}</div>
+                    </div>
+                    
+                    <div class="keywords-section" v-if="article.keywords">
+                        <div class="keywords-title">Keywords</div>
+                        <div class="keywords-list">
+                            <span 
+                                v-for="keyword in keywords" 
+                                :key="keyword"
+                                class="keyword-tag"
+                            >
+                                {{ keyword }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `,
+            setup() {
+                return { Utils };
+            }
+        };
+
+        const ArticleContent = {
+            props: {
+                content: {
+                    type: String,
+                    default: ''
+                }
+            },
+            template: `
+                <div class="article-content" v-html="content"></div>
+            `
+        };
+
+        const ContentArea = {
+            props: {
+                selectedArticle: {
+                    type: Object,
+                    default: null
+                },
+                articleContent: {
+                    type: String,
+                    default: ''
+                },
+                contentLoading: {
+                    type: Boolean,
+                    default: false
+                },
+                contentError: {
+                    type: String,
+                    default: ''
+                }
+            },
+            components: {
+                AiSummary,
+                ArticleContent
+            },
+            template: `
+                <div class="content-area">
+                    <div v-if="!selectedArticle" class="content-placeholder">
+                        Select an article to view its content
+                    </div>
+
+                    <div v-else-if="contentLoading" class="content-loading">
+                        Loading content...
+                    </div>
+
+                    <div v-else-if="contentError" class="error">
+                        {{ contentError }}
+                    </div>
+
+                    <div v-else-if="articleContent">
+                        <ai-summary :article="selectedArticle" />
+                        <article-content :content="articleContent" />
+                    </div>
+                </div>
+            `
+        };
+
+        const ReadLaterApp = {
+            components: {
+                ArticlesList,
+                ContentArea
+            },
+            setup() {
+                const articles = ref([]);
+                const selectedArticle = ref(null);
+                const articleContent = ref('');
+                const loading = ref(true);
+                const contentLoading = ref(false);
+                const error = ref('');
+                const contentError = ref('');
+
+                const loadArticles = async () => {
+                    try {
+                        loading.value = true;
+                        error.value = '';
+                        
+                        const data = await ApiService.getArticles();
+                        articles.value = data;
+                    } catch (err) {
+                        error.value = 'Failed to load articles. Please check if the API is running.';
+                        console.error('Error loading articles:', err);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const selectArticle = async (article) => {
+                    selectedArticle.value = article;
+                    await loadArticleContent(article.id);
+                };
+
+                const loadArticleContent = async (articleId) => {
+                    try {
+                        contentLoading.value = true;
+                        contentError.value = '';
+                        articleContent.value = '';
+                        
+                        const data = await ApiService.getArticleContent(articleId);
+                        articleContent.value = Utils.convertMarkdownToHtml(data.content);
+                    } catch (err) {
+                        contentError.value = 'Failed to load article content. The GET /article/{id} endpoint may not be implemented yet.';
+                        console.error('Error loading article content:', err);
+                    } finally {
+                        contentLoading.value = false;
+                    }
+                };
+
+                onMounted(() => {
+                    loadArticles();
+                });
+
+                return {
+                    articles,
+                    selectedArticle,
+                    articleContent,
+                    loading,
+                    contentLoading,
+                    error,
+                    contentError,
+                    selectArticle
+                };
+            },
+            template: `
+                <div class="app-container">
+                    <articles-list
+                        :articles="articles"
+                        :selected-article="selectedArticle"
+                        :loading="loading"
+                        :error="error"
+                        @article-selected="selectArticle"
+                    />
+                    
+                    <content-area
+                        :selected-article="selectedArticle"
+                        :article-content="articleContent"
+                        :content-loading="contentLoading"
+                        :content-error="contentError"
+                    />
+                </div>
+            `
+        };
+
+        createApp({
+            components: {
+                ReadLaterApp
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

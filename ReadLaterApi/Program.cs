@@ -13,18 +13,66 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServices();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Development", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.UseCors("Development");
 }
 
 app.UseHttpsRedirection();
 
 app.MapGet("/articles", async (AppDbContext db) => await db.Articles.ToListAsync())
     .WithName("GetAllArticles")
+    .WithTags("Articles");
+
+app.MapGet("/article/{id:guid}", async (Guid id, AppDbContext db, IBlobStorageService blobService) =>
+    {
+        // Get article from database
+        var article = await db.Articles.FindAsync(id);
+        if (article == null)
+        {
+            return Results.NotFound("Article not found");
+        }
+
+        try
+        {
+            // Get content from blob storage
+            var content = await blobService.GetArticleContent(article.BlobGuid);
+        
+            return Results.Ok(new
+            {
+                Id = article.Id,
+                Title = article.Title,
+                Url = article.Url,
+                SavedAtUtc = article.SavedAtUtc,
+                IsRead = article.IsRead,
+                TextSummary = article.TextSummary,
+                Keywords = article.Keywords,
+                Content = content
+            });
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                detail: $"Error retrieving article content: {ex.Message}",
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "Blob Storage Error");
+        }
+    })
+    .WithName("GetArticle")
     .WithTags("Articles");
 
 app.MapPost("/article", async (

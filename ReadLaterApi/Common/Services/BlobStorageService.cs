@@ -30,4 +30,18 @@ public class BlobStorageService : IBlobStorageService
         
         return blobClient.Uri;
     }
+    
+    public async Task<string> GetArticleContent(string blobName)
+    {
+        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+        var blobClient = containerClient.GetBlobClient(blobName);
+
+        if (!await blobClient.ExistsAsync())
+        {
+            throw new FileNotFoundException($"Blob '{blobName}' not found");
+        }
+
+        Response<BlobDownloadResult> response = await blobClient.DownloadContentAsync();
+        return response.Value.Content.ToString();
+    }
 }
