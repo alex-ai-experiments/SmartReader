@@ -92,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function sendArticleToServer(article: ArticleData) {
-    const apiUrl = "https://localhost:7198/article";
+    const apiUrl = "https://readitlater.azurewebsites.net/article";
     const payload = {
       title: article.title,
       url: article.url,

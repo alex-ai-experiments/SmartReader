@@ -12,8 +12,8 @@ using ReadLaterApi.Data;
 namespace ReadLaterApi.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250529140101_AddAIFields")]
-    partial class AddAIFields
+    [Migration("20250601171037_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,9 +39,6 @@ namespace ReadLaterApi.Data.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("Keywords")
-                        .HasColumnType("text");
-
-                    b.Property<string>("NamedEntities")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("SavedAtUtc")

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ReadLaterApi.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -20,7 +20,9 @@ namespace ReadLaterApi.Data.Migrations
                     Url = table.Column<string>(type: "character varying(2048)", maxLength: 2048, nullable: false),
                     SavedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsRead = table.Column<bool>(type: "boolean", nullable: false),
-                    BlobGuid = table.Column<string>(type: "text", nullable: false)
+                    BlobGuid = table.Column<string>(type: "text", nullable: false),
+                    TextSummary = table.Column<string>(type: "text", nullable: true),
+                    Keywords = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {

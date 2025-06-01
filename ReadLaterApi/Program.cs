@@ -32,6 +32,12 @@ if (app.Environment.IsDevelopment())
     app.UseCors("Development");
 }
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
 app.UseHttpsRedirection();
 
 app.MapGet("/articles", async (AppDbContext db) => await db.Articles.ToListAsync())

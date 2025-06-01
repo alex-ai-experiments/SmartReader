@@ -38,9 +38,6 @@ namespace ReadLaterApi.Data.Migrations
                     b.Property<string>("Keywords")
                         .HasColumnType("text");
 
-                    b.Property<string>("NamedEntities")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("SavedAtUtc")
                         .HasColumnType("timestamp with time zone");
 

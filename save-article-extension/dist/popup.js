@@ -85,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     function sendArticleToServer(article) {
         return __awaiter(this, void 0, void 0, function* () {
-            const apiUrl = "https://localhost:7198/article";
+            const apiUrl = "https://readitlater.azurewebsites.net/article";
             const payload = {
                 title: article.title,
                 url: article.url,
