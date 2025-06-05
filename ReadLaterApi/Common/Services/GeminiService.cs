@@ -18,7 +18,6 @@ public class GeminiService : IGeminiService
 
     public async Task<ArticleAnalysis> AnalyzeArticleAsync(string markdownContent)
     {
-        // Validate input
         if (string.IsNullOrWhiteSpace(markdownContent))
         {
             throw new ArgumentException("Markdown content cannot be null or empty", nameof(markdownContent));
@@ -125,18 +124,6 @@ Requirements:
                 if (keyword.GetString() is { } kw)
                     keywords.Add(kw);
             }
-
-            // var entitiesArray = root.GetProperty("namedEntities");
-            // var namedEntities = new List<NamedEntity>();
-            // foreach (var entity in entitiesArray.EnumerateArray())
-            // {
-            //     var entityText = entity.GetProperty("text").GetString() ?? "";
-            //     var entityType = entity.GetProperty("type").GetString() ?? "";
-            //     var startPos = entity.GetProperty("startPosition").GetInt32();
-            //     var endPos = entity.GetProperty("endPosition").GetInt32();
-            //     
-            //     namedEntities.Add(new NamedEntity(entityText, entityType, startPos, endPos));
-            // }
 
             return new ArticleAnalysis(summary, keywords);
         }

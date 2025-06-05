@@ -1,5 +1,3 @@
-// save-article-extension/src/popup.ts
-
 interface ArticleData {
   title: string;
   content: string;
@@ -13,14 +11,42 @@ interface MessageResponse {
   error?: string;
 }
 
+interface SavedArticleResponse {
+  id: string;
+  title: string;
+  url: string;
+  savedAtUtc: string;
+  isRead: boolean;
+  blobGuid: string;
+  textSummary?: string; 
+  keywords?: string;  
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const saveButton = document.getElementById(
     "saveArticleBtn"
   ) as HTMLButtonElement;
   const statusDiv = document.getElementById("status") as HTMLDivElement;
 
+  const summaryContainer = document.getElementById("summaryContainer") as HTMLDivElement;
+  const summaryTextElement = document.getElementById("summaryText") as HTMLParagraphElement;
+  const keywordsListElement = document.getElementById("keywordsList") as HTMLUListElement;
+
+  function clearAiSummary() {
+    if (summaryContainer) {
+      summaryContainer.style.display = "none";
+    }
+    if (summaryTextElement) {
+      summaryTextElement.textContent = "";
+    }
+    if (keywordsListElement) {
+      keywordsListElement.innerHTML = "";
+    }
+  }
+
   if (saveButton) {
     saveButton.addEventListener("click", async () => {
+      clearAiSummary();
       setStatus("Extracting content...", "info");
       saveButton.disabled = true;
 
@@ -33,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentTab && currentTab.id) {
           console.log("[Popup] Sending message to tab:", currentTab.id);
           
-          // Send message to content script
           const response = await new Promise<MessageResponse>((resolve, reject) => {
             chrome.tabs.sendMessage(
               currentTab.id!,
@@ -76,14 +101,18 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error: any) {
         console.error("[Popup] Error processing article:", error);
         
-        // Check if it's a content script not found error
-        if (error.message && error.message.includes("Could not establish connection")) {
+        let errorMessage = "Unknown error occurred.";
+        if (error && error.message) {
+            errorMessage = error.message;
+        }
+
+        if (errorMessage.includes("Could not establish connection")) {
           setStatus(
             "Error: Content script not loaded. Please refresh the page and try again.",
             "error"
           );
         } else {
-          setStatus(`Error: ${error.message || "Unknown error"}`, "error");
+          setStatus(`Error: ${errorMessage}`, "error");
         }
       } finally {
         saveButton.disabled = false;
@@ -96,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const payload = {
       title: article.title,
       url: article.url,
-      content: article.content, // This is HTML content
+      content: article.content, 
     };
 
     try {
@@ -109,8 +138,16 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (response.ok) {
-        setStatus("Article saved successfully!", "success");
-        console.log("Article saved:", await response.json());
+        const savedArticle: SavedArticleResponse = await response.json();
+        console.log("Article saved:", savedArticle);
+        setStatus("Article saved successfully!", "success"); 
+
+        if (savedArticle.textSummary) {
+          displayAiSummary(savedArticle.textSummary, savedArticle.keywords);
+          setStatus("Article saved and AI summary retrieved!", "success");
+        } else {
+          setStatus("Article saved. AI summary not available at this time.", "warning");
+        }
       } else {
         const errorText = await response.text();
         console.error("Error saving article:", response.status, errorText);
@@ -128,17 +165,53 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function displayAiSummary(summary: string, keywordsJsonString?: string | null) {
+    if (!summaryContainer || !summaryTextElement || !keywordsListElement) {
+      console.error("Summary display elements not found in the DOM.");
+      return;
+    }
+
+    summaryTextElement.textContent = summary;
+    keywordsListElement.innerHTML = ""; 
+
+    let parsedKeywords: string[] | null = null;
+
+    if (keywordsJsonString) { 
+      try {
+        parsedKeywords = JSON.parse(keywordsJsonString); 
+      } catch (e) {
+        console.error("Error parsing keywords JSON:", e, "Input:", keywordsJsonString);
+        const li = document.createElement("li");
+        li.textContent = "Error: Could not parse keywords.";
+        li.style.fontStyle = "italic"; 
+        keywordsListElement.appendChild(li);
+        summaryContainer.style.display = "block";
+        return; 
+      }
+    }
+
+
+    if (Array.isArray(parsedKeywords) && parsedKeywords.length > 0) {
+      parsedKeywords.forEach(keyword => {
+        const li = document.createElement("li");
+        li.textContent = keyword;
+        keywordsListElement.appendChild(li);
+      });
+    } else {
+      const li = document.createElement("li");
+      li.textContent = "No keywords available.";
+      keywordsListElement.appendChild(li);
+    }
+    summaryContainer.style.display = "block";
+  }
+
   function setStatus(
     message: string,
     type: "info" | "success" | "error" | "warning"
   ) {
     if (statusDiv) {
       statusDiv.textContent = message;
-      statusDiv.className = type; // You can style these classes
-      if (type === "error") statusDiv.style.color = "red";
-      else if (type === "success") statusDiv.style.color = "green";
-      else if (type === "warning") statusDiv.style.color = "orange";
-      else statusDiv.style.color = "black";
+      statusDiv.className = type;
     }
   }
 });

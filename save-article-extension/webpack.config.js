@@ -1,10 +1,9 @@
-// save-article-extension/webpack.config.js
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  mode: 'development', // or 'production' for smaller builds
-  devtool: 'cheap-module-source-map', // For easier debugging
+  mode: 'development', 
+  devtool: 'cheap-module-source-map', 
   entry: {
     popup: './src/popup.ts',
     content: './src/content.ts',

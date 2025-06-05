@@ -1,4 +1,3 @@
-// save-article-extension/src/content.ts
 import { Readability } from '@mozilla/readability';
 
 console.log("[CS] Content script loaded and ready for messages.");
@@ -16,11 +15,9 @@ interface ArticleData {
  * @returns Markdown formatted string with only text content
  */
 function htmlToMarkdown(htmlContent: string): string {
-  // Create a temporary DOM element to parse HTML
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = htmlContent;
 
-  // Remove script, style, and other non-content elements
   const elementsToRemove = tempDiv.querySelectorAll('script, style, nav, footer, aside, .advertisement, .ads');
   elementsToRemove.forEach(el => el.remove());
 
@@ -148,18 +145,16 @@ function htmlToMarkdown(htmlContent: string): string {
 
   processChildren(tempDiv);
 
-  // Clean up the markdown - remove excessive whitespace and newlines
   return markdown
-    .replace(/\n{3,}/g, '\n\n') // Replace 3+ newlines with 2
-    .replace(/[ \t]+/g, ' ')    // Replace multiple spaces/tabs with single space
-    .replace(/[ \t]*\n[ \t]*/g, '\n') // Remove spaces around newlines
+    .replace(/\n{3,}/g, '\n\n') 
+    .replace(/[ \t]+/g, ' ')    
+    .replace(/[ \t]*\n[ \t]*/g, '\n') 
     .trim();
 }
 
 function extractArticle(): ArticleData {
   console.log("[CS] extractArticle function called.");
   
-  // Check if Readability is available
   if (typeof Readability === 'undefined') {
     console.error("[CS] Readability library is undefined! Check bundling.");
     return {
@@ -171,7 +166,6 @@ function extractArticle(): ArticleData {
   }
 
   try {
-    // Check document readiness
     console.log("[CS] Document readyState:", document.readyState);
     if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
       console.warn("[CS] Document may not be fully loaded yet for Readability.");
@@ -186,24 +180,22 @@ function extractArticle(): ArticleData {
     if (article && article.content) {
       console.log("[CS] Article content extracted successfully by Readability.");
       
-      // Convert HTML content to Markdown
       const markdownContent = htmlToMarkdown(article.content);
       console.log("[CS] Content converted to Markdown format.");
       
       return {
         title: article.title || document.title,
-        content: markdownContent, // Now returns markdown instead of HTML
+        content: markdownContent, 
         url: document.location.href,
       };
     } else {
       console.warn("[CS] Readability did not return content. Falling back to document.body.innerHTML. Article object:", article);
       
-      // Convert fallback HTML content to Markdown as well
       const fallbackMarkdown = htmlToMarkdown(document.body.innerHTML);
       
       return {
         title: document.title || "Fallback Title",
-        content: fallbackMarkdown, // Fallback also converted to markdown
+        content: fallbackMarkdown, 
         url: document.location.href,
         error: "Readability could not parse the article effectively. Full body used as fallback."
       };
@@ -225,7 +217,6 @@ function extractArticle(): ArticleData {
   }
 }
 
-// Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("[CS] Received message:", request);
   
@@ -251,6 +242,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: false, error: "Unknown action" });
   }
   
-  // Return true to indicate we will send a response asynchronously
   return true;
 });

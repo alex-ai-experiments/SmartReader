@@ -9,7 +9,6 @@
 /***/ (function() {
 
 
-// save-article-extension/src/popup.ts
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -22,8 +21,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 document.addEventListener("DOMContentLoaded", () => {
     const saveButton = document.getElementById("saveArticleBtn");
     const statusDiv = document.getElementById("status");
+    const summaryContainer = document.getElementById("summaryContainer");
+    const summaryTextElement = document.getElementById("summaryText");
+    const keywordsListElement = document.getElementById("keywordsList");
+    function clearAiSummary() {
+        if (summaryContainer) {
+            summaryContainer.style.display = "none";
+        }
+        if (summaryTextElement) {
+            summaryTextElement.textContent = "";
+        }
+        if (keywordsListElement) {
+            keywordsListElement.innerHTML = "";
+        }
+    }
     if (saveButton) {
         saveButton.addEventListener("click", () => __awaiter(void 0, void 0, void 0, function* () {
+            clearAiSummary();
             setStatus("Extracting content...", "info");
             saveButton.disabled = true;
             try {
@@ -33,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 if (currentTab && currentTab.id) {
                     console.log("[Popup] Sending message to tab:", currentTab.id);
-                    // Send message to content script
                     const response = yield new Promise((resolve, reject) => {
                         chrome.tabs.sendMessage(currentTab.id, { action: "extractArticle" }, (response) => {
                             if (chrome.runtime.lastError) {
@@ -70,12 +83,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             catch (error) {
                 console.error("[Popup] Error processing article:", error);
-                // Check if it's a content script not found error
-                if (error.message && error.message.includes("Could not establish connection")) {
+                let errorMessage = "Unknown error occurred.";
+                if (error && error.message) {
+                    errorMessage = error.message;
+                }
+                if (errorMessage.includes("Could not establish connection")) {
                     setStatus("Error: Content script not loaded. Please refresh the page and try again.", "error");
                 }
                 else {
-                    setStatus(`Error: ${error.message || "Unknown error"}`, "error");
+                    setStatus(`Error: ${errorMessage}`, "error");
                 }
             }
             finally {
@@ -89,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const payload = {
                 title: article.title,
                 url: article.url,
-                content: article.content, // This is HTML content
+                content: article.content,
             };
             try {
                 const response = yield fetch(apiUrl, {
@@ -100,8 +116,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify(payload),
                 });
                 if (response.ok) {
+                    const savedArticle = yield response.json();
+                    console.log("Article saved:", savedArticle);
                     setStatus("Article saved successfully!", "success");
-                    console.log("Article saved:", yield response.json());
+                    if (savedArticle.textSummary) {
+                        displayAiSummary(savedArticle.textSummary, savedArticle.keywords);
+                        setStatus("Article saved and AI summary retrieved!", "success");
+                    }
+                    else {
+                        setStatus("Article saved. AI summary not available at this time.", "warning");
+                    }
                 }
                 else {
                     const errorText = yield response.text();
@@ -115,18 +139,46 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+    function displayAiSummary(summary, keywordsJsonString) {
+        if (!summaryContainer || !summaryTextElement || !keywordsListElement) {
+            console.error("Summary display elements not found in the DOM.");
+            return;
+        }
+        summaryTextElement.textContent = summary;
+        keywordsListElement.innerHTML = "";
+        let parsedKeywords = null;
+        if (keywordsJsonString) {
+            try {
+                parsedKeywords = JSON.parse(keywordsJsonString);
+            }
+            catch (e) {
+                console.error("Error parsing keywords JSON:", e, "Input:", keywordsJsonString);
+                const li = document.createElement("li");
+                li.textContent = "Error: Could not parse keywords.";
+                li.style.fontStyle = "italic";
+                keywordsListElement.appendChild(li);
+                summaryContainer.style.display = "block";
+                return;
+            }
+        }
+        if (Array.isArray(parsedKeywords) && parsedKeywords.length > 0) {
+            parsedKeywords.forEach(keyword => {
+                const li = document.createElement("li");
+                li.textContent = keyword;
+                keywordsListElement.appendChild(li);
+            });
+        }
+        else {
+            const li = document.createElement("li");
+            li.textContent = "No keywords available.";
+            keywordsListElement.appendChild(li);
+        }
+        summaryContainer.style.display = "block";
+    }
     function setStatus(message, type) {
         if (statusDiv) {
             statusDiv.textContent = message;
-            statusDiv.className = type; // You can style these classes
-            if (type === "error")
-                statusDiv.style.color = "red";
-            else if (type === "success")
-                statusDiv.style.color = "green";
-            else if (type === "warning")
-                statusDiv.style.color = "orange";
-            else
-                statusDiv.style.color = "black";
+            statusDiv.className = type;
         }
     }
 });

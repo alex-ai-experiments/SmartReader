@@ -9,7 +9,7 @@
     "tabs"
   ],
   "host_permissions": [
-    "https://localhost:7198/*"
+    "https://readitlater.azurewebsites.net/*" 
   ],
   "action": {
     "default_popup": "popup.html",

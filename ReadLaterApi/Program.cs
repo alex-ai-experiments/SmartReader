@@ -46,7 +46,6 @@ app.MapGet("/articles", async (AppDbContext db) => await db.Articles.ToListAsync
 
 app.MapGet("/article/{id:guid}", async (Guid id, AppDbContext db, IBlobStorageService blobService) =>
     {
-        // Get article from database
         var article = await db.Articles.FindAsync(id);
         if (article == null)
         {
@@ -55,7 +54,6 @@ app.MapGet("/article/{id:guid}", async (Guid id, AppDbContext db, IBlobStorageSe
 
         try
         {
-            // Get content from blob storage
             var content = await blobService.GetArticleContent(article.BlobGuid);
         
             return Results.Ok(new
@@ -92,7 +90,6 @@ app.MapPost("/article", async (
 
     try
     {
-        // Upload article content to blob storage
         var blobUri = await blobService.UploadArticle(articleReq.Content, blobName);
     }
     catch (Exception)
@@ -103,7 +100,6 @@ app.MapPost("/article", async (
             title: "Blob Storage Error");
     }
 
-    // Analyze article content with Gemini
     ArticleAnalysis analysis;
     try
     {
@@ -130,7 +126,6 @@ app.MapPost("/article", async (
             WriteIndented = true,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         }),
-        // NamedEntities = JsonSerializer.Serialize(analysis.NamedEntities)
     };
 
     try
