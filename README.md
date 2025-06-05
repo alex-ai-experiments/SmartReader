@@ -1,6 +1,16 @@
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/696d2d5e-7f37-4e94-be57-64f2d9cdc05d" alt="Descriptive Alt Text" width="200" />
+</p>
+
 # Read It Later with AI Summaries
 
-This application allows you to save web articles for later reading and automatically generates AI-powered summaries and keywords for them. It consists of a .NET backend API, a Chrome extension for capturing articles, a PostgreSQL database for storage, Azure Blob Storage for article content, Google's Gemini API for text analysis, and a Vue.js frontend to view saved articles.
+This Chrome extension allows you to save web articles for later reading and automatically generates AI-powered summaries and keywords for them. It consists of a .NET backend API, a Chrome extension for capturing articles, a PostgreSQL database for storage, Azure Blob Storage for article content, Google's Gemini API for text analysis, and a Vue.js frontend to view saved articles.
+
+# Info
+
+Go to [Building the Extension](#building-the-extension) for a quick run of the Chrome extension. The articles can be accessed at https://rdltarticles.z36.web.core.windows.net/. For more configuration, follow the [Local Development Setup (Docker)](#local-development-setup-docker). The frontend page acts more as a demo view for the articles saved and their summaries/keywords.
+
+# Examples
 
 ![brave_djCCzksgcY](https://github.com/user-attachments/assets/ce60214a-8d0e-456d-bd9d-4187dd541182)
 *Process of saving an article and displaying the AI summary of it (plus the keywords)*
@@ -30,7 +40,7 @@ This application allows you to save web articles for later reading and automatic
 
 The application is composed of several key components:
 
-*   **Backend API (.NET 7)**:
+*   **Backend API (.NET 9)**:
     *   Built with ASP.NET Core Minimal APIs.
     *   Handles article creation, retrieval, and management.
     *   Integrates with Azure Blob Storage to store the full Markdown content of articles.
@@ -49,6 +59,7 @@ The application is composed of several key components:
 *   **Google Gemini API**:
     *   Provides the AI capabilities for analyzing article content, generating a concise summary, and extracting relevant keywords.
 *   **Frontend Web Application (Vue.js)**:
+    *   This is a simple frontend focused mainly on acting as a demo view of the saved articles and everything.
     *   A single-page application (`main.html`) built with Vue.js.
     *   Hosted as a static website (currently on Azure Blob Storage static website feature).
     *   Allows users to browse their saved articles, view the full content, and see the AI-generated summaries and keywords.
@@ -58,7 +69,7 @@ The application is composed of several key components:
 
 ## Technologies Used
 
-*   **Backend**: .NET 7, C#, ASP.NET Core Minimal APIs, Entity Framework Core
+*   **Backend**: .NET 9, C#, ASP.NET Core Minimal APIs, Entity Framework Core
 *   **Database**: PostgreSQL
 *   **Cloud Storage**: Azure Blob Storage (for article content and hosting `main.html`)
 *   **AI Service**: Google Gemini API
@@ -153,6 +164,8 @@ This section explains how to build and load the Chrome extension for saving arti
     *   In the file dialog, navigate to your project directory and select the `dist` folder (created by the `npm run build` command).
     *   Click "Select Folder".
 5.  The "Save Article Extension" should now appear in your list of extensions and its icon should be visible in the Chrome toolbar.
+6.  ![image](https://github.com/user-attachments/assets/37c2f2da-00b7-4c44-b7ef-109d30a3ba39)
+
 
 ### Configuring Extension for Local API
 
